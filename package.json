@@ -22,9 +22,10 @@
   },
   "dependencies": {
     "@nestjs/common": "^7.6.13",
+    "@nestjs/config": "^0.6.3",
     "@nestjs/core": "^7.6.13",
     "@nestjs/platform-express": "^7.6.13",
-    "@oryd/hydra-client": "^1.9.0-alpha.3",
+    "@ory/hydra-client": "^1.10.3",
     "reflect-metadata": "^0.1.13",
     "rimraf": "^3.0.2",
     "rxjs": "^6.6.6"

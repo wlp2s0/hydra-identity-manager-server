@@ -8,10 +8,10 @@ import {
   Query,
   Redirect,
 } from '@nestjs/common';
-import { ConsentRequestSession } from '@oryd/hydra-client';
+import { ConsentRequestSession } from '@ory/hydra-client';
 import { hydraAdmin } from 'src/config';
 
-@Controller('/consent')
+@Controller('/v1/consent')
 export class ConsentController {
   @Get()
   @Redirect()
@@ -60,11 +60,14 @@ export class ConsentController {
         );
 
         // All we need to do now is to redirect the user back to hydra!
-        return responseBody.redirect_to;
+        return { url: responseBody.redirect_to };
       }
 
       // If authentication can't be skipped we MUST show the login UI.
-      return process.env.BASE_URL + '/consent';
+      return {
+        // ToDo: serialize requestedScopes
+        url: `${process.env.CLIENT_BASE_URL}/consent?challenge=${challenge}&clientName=${body?.client?.client_name}`,
+      };
     } catch (error) {
       throw new HttpException(
         error?.message || 'BadRequest',
@@ -127,7 +130,7 @@ export class ConsentController {
         await hydraAdmin.acceptConsentRequest(challenge, {
           // We can grant all scopes that have been requested - hydra already checked for us that no additional scopes
           // are requested accidentally.
-          grant_scope: grantScope,
+          grant_scope: getConsentResponse.requested_scope,
 
           // If the environment variable CONFORMITY_FAKE_CLAIMS is set we are assuming that
           // the app is built for the automated OpenID Connect Conformity Test Suite. You

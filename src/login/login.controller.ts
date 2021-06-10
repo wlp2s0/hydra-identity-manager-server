@@ -10,7 +10,7 @@ import {
 } from '@nestjs/common';
 import { hydraAdmin } from 'src/config';
 
-@Controller('/login')
+@Controller('/v1/login')
 export class LoginController {
   @Get()
   @Redirect()
@@ -40,11 +40,13 @@ export class LoginController {
         );
 
         // All we need to do now is to redirect the user back to hydra!
-        return responseBody.redirect_to;
+        return { url: responseBody.redirect_to };
       }
 
       // If authentication can't be skipped we MUST show the login UI.
-      return process.env.BASE_URL + '/login';
+      return {
+        url: `${process.env.CLIENT_BASE_URL}/login?challenge=${challenge}`,
+      };
       /*    
       res.render('login', {
         challenge: challenge,
@@ -136,7 +138,10 @@ export class LoginController {
       //   // This will handle any error that happens when making HTTP calls to hydra
       //   .catch(next);
     } catch (error) {
-      console.error(error);
+      throw new HttpException(
+        error.message || 'BadRequest',
+        HttpStatus.BAD_REQUEST,
+      );
     }
   }
 }
