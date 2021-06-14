@@ -10,7 +10,7 @@ steps:
         from_secret: docker_username
       password:
         from_secret: docker_password
-      repo: docker.pkg.github.com/webcom-tech/wlp2s0/hydra-identity-manager-server/server
+      repo: docker.pkg.github.com/wlp2s0/hydra-identity-manager-server/server
       context: .
       dockerfile: ./.docker/Dockerfile
       registry: docker.pkg.github.com
