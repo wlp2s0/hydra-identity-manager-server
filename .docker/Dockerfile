@@ -5,7 +5,7 @@ RUN npm i
 COPY . .
 RUN npm run build
 
-FROM node:16
+FROM node:16 as production
 ENV NODE_ENV production
 WORKDIR /app
 COPY package.json .
