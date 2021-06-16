@@ -1,18 +1,21 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { ConsentController } from './consent/consent.controller';
-import { LoginController } from './login/login.controller';
 import { ConfigModule } from '@nestjs/config';
+import { MongooseModule } from '@nestjs/mongoose';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
+    MongooseModule.forRoot(
+      'mongodb://root:2B3s2Ih1YYxO@localhost/hydra-identity-manager',
+      {
+        authSource: 'admin',
+      },
+    ),
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.development.env',
     }),
+    AuthModule,
   ],
-  controllers: [AppController, ConsentController, LoginController],
-  providers: [AppService],
 })
 export class AppModule {}

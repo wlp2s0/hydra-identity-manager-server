@@ -8,10 +8,15 @@ import {
   Query,
   Redirect,
 } from '@nestjs/common';
+import { verify } from 'argon2';
 import { hydraAdmin } from 'src/config';
+import { LoginRequest } from './requests/LoginRequest';
+import { UserService } from './user.service';
 
 @Controller('/v1/login')
 export class LoginController {
+  constructor(private readonly userService: UserService) {}
+
   @Get()
   @Redirect()
   async getLogin(@Query('login_challenge') challenge: string) {
@@ -63,7 +68,10 @@ export class LoginController {
   }
 
   @Post()
-  async postLogin(@Body() { challenge, submit, email, password, remember }) {
+  async postLogin(
+    @Body()
+    { challenge, submit, email, password, remember = true }: LoginRequest,
+  ) {
     try {
       // The challenge is now a hidden input field, so let's take it from the request body instead
       // Let's see if the user decided to accept or reject the consent request..
@@ -82,20 +90,16 @@ export class LoginController {
       }
       // Let's check if the user provided valid credentials. Of course, you'd use a database or some third-party service
       // for this!
-      if (!(email === 'foo@bar.com' && password === 'foobar')) {
+      const user = await this.userService.findByEmail(email);
+
+      const verified = await verify(user.password, password);
+
+      if (!verified) {
         // Looks like the user provided invalid credentials, let's show the ui again...
         throw new Error('The username / password combination is not correct');
-        /*       
-      res.render('login', {
-        csrfToken: req.csrfToken(),
-        challenge: challenge,
-        error: 'The username / password combination is not correct',
-      }); 
-      */
       }
 
       // Seems like the user authenticated! Let's tell hydra...
-
       const { data: acceptLoginResponse } = await hydraAdmin.acceptLoginRequest(
         challenge,
         {

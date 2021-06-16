@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import { ConsentRequestSession } from '@ory/hydra-client';
 import { hydraAdmin } from 'src/config';
+import { ConsentRequest } from './requests/ConsentRequest';
 
 @Controller('/v1/consent')
 export class ConsentController {
@@ -77,7 +78,9 @@ export class ConsentController {
   }
 
   @Post()
-  async postLogin(@Body() { submit, challenge, grant_scope, remember }) {
+  async postLogin(
+    @Body() { submit, challenge, grantScope, remember = true }: ConsentRequest,
+  ) {
     try {
       // The challenge is now a hidden input field, so let's take it from the request body instead
       // Let's see if the user decided to accept or reject the consent request..
@@ -95,7 +98,6 @@ export class ConsentController {
         return { redirectUri: responseBody.redirect_to };
       }
 
-      let grantScope = grant_scope;
       if (!Array.isArray(grantScope)) {
         grantScope = [grantScope];
       }
