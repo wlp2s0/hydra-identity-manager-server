@@ -11,5 +11,5 @@ WORKDIR /app
 COPY package.json .
 RUN npm i --production
 COPY --from=build /app/dist .
-#ENV OPENSSL_CONF=/opt/openssl.cnf
+COPY --from=build /app/.development.env ./.development.env
 CMD ["npm", "run", "start:prod"]
