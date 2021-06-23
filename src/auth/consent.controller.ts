@@ -8,12 +8,17 @@ import {
   Query,
   Redirect,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { ConsentRequestSession } from '@ory/hydra-client';
-import { hydraAdmin } from 'src/config';
+import { HydraService } from './hydra.service';
 import { ConsentRequest } from './requests/ConsentRequest';
 
 @Controller('/v1/consent')
 export class ConsentController {
+  constructor(
+    private configService: ConfigService,
+    private hydraService: HydraService,
+  ) {}
   @Get()
   @Redirect()
   async getLogin(@Query('consent_challenge') challenge: string) {
@@ -28,7 +33,9 @@ export class ConsentController {
       // This section processes consent requests and either shows the consent UI or
       // accepts the consent request right away if the user has given consent to this
       // app before
-      const { data: body } = await hydraAdmin.getConsentRequest(challenge);
+      const { data: body } = await this.hydraService.client.getConsentRequest(
+        challenge,
+      );
 
       // If hydra was already able to authenticate the user, skip will be true and we do not need to re-authenticate
       // the user.
@@ -39,9 +46,8 @@ export class ConsentController {
         // Now it's time to grant the login request. You could also deny the request if something went terribly wrong
         // (e.g. your arch-enemy logging in...)
         // All we need to do is to confirm that we indeed want to log in the user.
-        const { data: responseBody } = await hydraAdmin.acceptConsentRequest(
-          challenge,
-          {
+        const { data: responseBody } =
+          await this.hydraService.client.acceptConsentRequest(challenge, {
             // We can grant all scopes that have been requested - hydra already checked for us that no additional scopes
             // are requested accidentally.
             grant_scope: body.requested_scope,
@@ -57,17 +63,18 @@ export class ConsentController {
               // This data will be available in the ID token.
               id_token: { email: body.subject },
             },
-          },
-        );
+          });
 
         // All we need to do now is to redirect the user back to hydra!
         return { url: responseBody.redirect_to };
       }
-
+      const clientBaseUrl = this.configService.get<string>(
+        'APP_CLIENT_BASE_URL',
+      );
       // If authentication can't be skipped we MUST show the login UI.
       return {
         // ToDo: serialize requestedScopes
-        url: `${process.env.CLIENT_BASE_URL}/consent?challenge=${challenge}&clientName=${body?.client?.client_name}`,
+        url: `${clientBaseUrl}/consent?challenge=${challenge}&clientName=${body?.client?.client_name}`,
       };
     } catch (error) {
       throw new HttpException(
@@ -86,13 +93,11 @@ export class ConsentController {
       // Let's see if the user decided to accept or reject the consent request..
       if (submit === 'Deny access') {
         // Looks like the consent request was denied by the user
-        const { data: responseBody } = await hydraAdmin.rejectConsentRequest(
-          challenge,
-          {
+        const { data: responseBody } =
+          await this.hydraService.client.rejectConsentRequest(challenge, {
             error: 'access_denied',
             error_description: 'The resource owner denied the request',
-          },
-        );
+          });
 
         // All we need to do now is to redirect the browser back to hydra!
         return { redirectUri: responseBody.redirect_to };
@@ -124,12 +129,11 @@ export class ConsentController {
       // }
 
       // Let's fetch the consent request again to be able to set `grantAccessTokenAudience` properly.
-      const { data: getConsentResponse } = await hydraAdmin.getConsentRequest(
-        challenge,
-      );
+      const { data: getConsentResponse } =
+        await this.hydraService.client.getConsentRequest(challenge);
 
       const { data: acceptConsenteResponse } =
-        await hydraAdmin.acceptConsentRequest(challenge, {
+        await this.hydraService.client.acceptConsentRequest(challenge, {
           // We can grant all scopes that have been requested - hydra already checked for us that no additional scopes
           // are requested accidentally.
           grant_scope: getConsentResponse.requested_scope,

@@ -8,15 +8,19 @@ import {
   Query,
   Redirect,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { verify } from 'argon2';
-import { hydraAdmin } from 'src/config';
+import { HydraService } from './hydra.service';
 import { LoginRequest } from './requests/LoginRequest';
 import { UserService } from './user.service';
 
 @Controller('/v1/login')
 export class LoginController {
-  constructor(private readonly userService: UserService) {}
-
+  constructor(
+    private readonly userService: UserService,
+    private configService: ConfigService,
+    private hydraService: HydraService,
+  ) {}
   @Get()
   @Redirect()
   async getLogin(@Query('login_challenge') challenge: string) {
@@ -28,7 +32,9 @@ export class LoginController {
         );
       }
 
-      const { data: body } = await hydraAdmin.getLoginRequest(challenge);
+      const { data: body } = await this.hydraService.client.getLoginRequest(
+        challenge,
+      );
 
       // If hydra was already able to authenticate the user, skip will be true and we do not need to re-authenticate
       // the user.
@@ -39,18 +45,22 @@ export class LoginController {
         // Now it's time to grant the login request. You could also deny the request if something went terribly wrong
         // (e.g. your arch-enemy logging in...)
         // All we need to do is to confirm that we indeed want to log in the user.
-        const { data: responseBody } = await hydraAdmin.acceptLoginRequest(
-          challenge,
-          { subject: body.subject },
-        );
+        const { data: responseBody } =
+          await this.hydraService.client.acceptLoginRequest(challenge, {
+            subject: body.subject,
+          });
 
         // All we need to do now is to redirect the user back to hydra!
         return { url: responseBody.redirect_to };
       }
 
+      const clientBaseUrl = this.configService.get<string>(
+        'APP_CLIENT_BASE_URL',
+      );
+
       // If authentication can't be skipped we MUST show the login UI.
       return {
-        url: `${process.env.CLIENT_BASE_URL}/login?challenge=${challenge}`,
+        url: `${clientBaseUrl}/login?challenge=${challenge}`,
       };
       /*    
       res.render('login', {
@@ -77,13 +87,11 @@ export class LoginController {
       // Let's see if the user decided to accept or reject the consent request..
       if (submit === 'Deny access') {
         // Looks like the consent request was denied by the user
-        const { data: responseBody } = await hydraAdmin.rejectLoginRequest(
-          challenge,
-          {
+        const { data: responseBody } =
+          await this.hydraService.client.rejectLoginRequest(challenge, {
             error: 'access_denied',
             error_description: 'The resource owner denied the request',
-          },
-        );
+          });
 
         // All we need to do now is to redirect the browser back to hydra!
         return { redirectUri: responseBody.redirect_to };
@@ -100,9 +108,8 @@ export class LoginController {
       }
 
       // Seems like the user authenticated! Let's tell hydra...
-      const { data: acceptLoginResponse } = await hydraAdmin.acceptLoginRequest(
-        challenge,
-        {
+      const { data: acceptLoginResponse } =
+        await this.hydraService.client.acceptLoginRequest(challenge, {
           // Subject is an alias for user ID. A subject can be a random string, a UUID, an email address, ....
           subject: email,
 
@@ -124,8 +131,7 @@ export class LoginController {
           //
           // If that variable is not set, the ACR value will be set to the default passed here ('0')
           acr: '0',
-        },
-      );
+        });
 
       // All we need to do now is to redirect the user back to hydra!
       return { redirectUri: acceptLoginResponse.redirect_to };
