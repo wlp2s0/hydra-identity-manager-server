@@ -10,7 +10,6 @@ ENV NODE_ENV production
 WORKDIR /app
 COPY package.json .
 RUN npm i --production
-COPY --from=build /app/dist .
-COPY --from=build /app/.development.env ./.development.env
-#CMD ["npm", "run", "start:prod"]
-CMD ["node", "dist/main"]
+COPY --from=build /app .
+#COPY --from=build /app/.development.env ./.development.env
+CMD ["npm", "run", "start:prod"]
