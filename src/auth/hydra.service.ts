@@ -9,9 +9,16 @@ export class HydraService {
     const basePath =
       configService.get<string>('APP_HYDRA_ADMIN_URL') ||
       'http://localhost:4445';
+
+    const username = configService.get<string>('APP_HYDRA_ADMIN_USERNAME');
+
+    const password = configService.get<string>('APP_HYDRA_ADMIN_PASSWORD');
+
     this.client = new AdminApi(
       new Configuration({
         basePath,
+        username,
+        password,
       }),
     );
   }
