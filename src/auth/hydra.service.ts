@@ -11,7 +11,6 @@ export class HydraService {
       'http://localhost:4445';
 
     const username = configService.get<string>('APP_HYDRA_ADMIN_USERNAME');
-
     const password = configService.get<string>('APP_HYDRA_ADMIN_PASSWORD');
 
     this.client = new AdminApi(
