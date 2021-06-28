@@ -34,7 +34,6 @@ export class LoginController {
 
       const { data: body } = await this.hydraService.client.getLoginRequest(
         challenge,
-        { auth: { user: 'user', password: 'password' } },
       );
 
       // If hydra was already able to authenticate the user, skip will be true and we do not need to re-authenticate
@@ -47,13 +46,9 @@ export class LoginController {
         // (e.g. your arch-enemy logging in...)
         // All we need to do is to confirm that we indeed want to log in the user.
         const { data: responseBody } =
-          await this.hydraService.client.acceptLoginRequest(
-            challenge,
-            {
-              subject: body.subject,
-            },
-            { auth: { user: 'user', password: 'password' } },
-          );
+          await this.hydraService.client.acceptLoginRequest(challenge, {
+            subject: body.subject,
+          });
 
         // All we need to do now is to redirect the user back to hydra!
         return { url: responseBody.redirect_to };
@@ -67,13 +62,6 @@ export class LoginController {
       return {
         url: `${clientBaseUrl}/login?challenge=${challenge}`,
       };
-      /*    
-      res.render('login', {
-        challenge: challenge,
-        action: process.env.BASE_URL + '/login',
-        hint: body.oidc_context?.login_hint || '',
-      }); 
-      */
     } catch (error) {
       throw new HttpException(
         error?.message || 'BadRequest',

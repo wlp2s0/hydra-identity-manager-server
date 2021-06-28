@@ -16,8 +16,7 @@ export class HydraService {
     this.client = new AdminApi(
       new Configuration({
         basePath,
-        username,
-        password,
+        baseOptions: { auth: { username, password } },
       }),
     );
   }
