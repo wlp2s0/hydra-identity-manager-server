@@ -9,9 +9,8 @@ import {
   Redirect,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { verify } from 'argon2';
 import { HydraService } from './hydra.service';
-import { LoginRequest } from './requests/LoginRequest';
+import { LogoutRequest } from './requests/LogoutRequest';
 import { UserService } from './user.service';
 
 @Controller('/v1/logout')
@@ -23,7 +22,7 @@ export class LogoutController {
   ) {}
   @Get()
   @Redirect()
-  async getLogin(@Query('logout_challenge') challenge: string) {
+  async getLogout(@Query('logout_challenge') challenge: string) {
     try {
       // The challenge is used to fetch information about the login request from ORY Hydra.
       if (!challenge) {
@@ -39,7 +38,7 @@ export class LogoutController {
       );
 
       return {
-        url: `${clientBaseUrl}/logout`,
+        url: `${clientBaseUrl}/logout?challenge=${challenge}`,
       };
     } catch (error) {
       throw new HttpException(
@@ -50,9 +49,9 @@ export class LogoutController {
   }
 
   @Post()
-  async postLogin(
+  async postLogout(
     @Body()
-    { challenge }: LoginRequest,
+    { challenge }: LogoutRequest,
   ) {
     try {
       const { data: acceptLogoutResponse } =
