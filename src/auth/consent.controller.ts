@@ -21,7 +21,7 @@ export class ConsentController {
   ) {}
   @Get()
   @Redirect()
-  async getLogin(@Query('consent_challenge') challenge: string) {
+  async getConsent(@Query('consent_challenge') challenge: string) {
     try {
       // The challenge is used to fetch information about the consent request from ORY hydraAdmin.
       if (!challenge) {
@@ -85,7 +85,7 @@ export class ConsentController {
   }
 
   @Post()
-  async postLogin(
+  async postConsent(
     @Body() { submit, challenge, grantScope, remember = true }: ConsentRequest,
   ) {
     try {
