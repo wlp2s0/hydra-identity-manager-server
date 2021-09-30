@@ -12,6 +12,7 @@ import { ConfigService } from '@nestjs/config';
 import { ConsentRequestSession } from '@ory/hydra-client';
 import { HydraService } from './hydra.service';
 import { ConsentRequest } from './requests/ConsentRequest';
+import { ClientMetadata } from './types/clientMetadata';
 
 @Controller('/v1/consent')
 export class ConsentController {
@@ -39,7 +40,7 @@ export class ConsentController {
 
       // If hydra was already able to authenticate the user, skip will be true and we do not need to re-authenticate
       // the user.
-      if (body.skip) {
+      if (body.skip || (body.client.metadata as ClientMetadata).isTrusted) {
         // You can apply logic here, for example update the number of times the user logged in.
         // ...
 
